@@ -4,6 +4,7 @@
 //!
 //! Now these apps are loaded into memory as a part of the kernel image.
 use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use axfs::api::read;
 use core::arch::global_asm;
 
 use axhal::paging::MappingFlags;
@@ -102,10 +103,20 @@ pub(crate) fn load_elf(name: &str, base_addr: VirtAddr) -> ELFInfo {
     use xmas_elf::program::{Flags, SegmentData};
     use xmas_elf::{header, ElfFile};
 
-    let elf = ElfFile::new(
-        get_app_data_by_name(name).unwrap_or_else(|| panic!("failed to get app: {}", name)),
-    )
-    .expect("invalid ELF file");
+    // new code
+    let data_vec = read(name).expect("can't find app in disk");
+    let data;
+    unsafe {
+        data = core::slice::from_raw_parts(&data_vec[0] as *const u8, data_vec.len());
+    }
+    let elf = ElfFile::new(data).expect("invalid ELF file");
+    // new code
+
+    // let elf = ElfFile::new(
+    //     get_app_data_by_name(name).unwrap_or_else(|| panic!("failed to get app: {}", name)),
+    // )
+    // .expect("invalid ELF file");
+    
     let elf_header = elf.header;
 
     assert_eq!(elf_header.pt1.magic, *b"\x7fELF", "invalid elf!");
