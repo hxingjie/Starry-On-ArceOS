@@ -6,4 +6,4 @@
 *.bin
 apps/*/build/
 **/target/
-**/Cargo.lock
+apps/**/Cargo.lock
