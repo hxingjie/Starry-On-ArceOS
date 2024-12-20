@@ -20,6 +20,8 @@ pub struct TaskExt {
     pub uctx: UspaceContext,
     /// The virtual memory address space.
     pub aspace: Arc<Mutex<AddrSpace>>,
+
+    pub child: usize,
 }
 
 impl TaskExt {
@@ -29,6 +31,7 @@ impl TaskExt {
             uctx,
             clear_child_tid: AtomicU64::new(0),
             aspace,
+            child: 0,
         }
     }
 

@@ -126,4 +126,128 @@ pub(crate) fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
 
 
 
-### 4.
+### 4.dup
+
+修改Cargo.toml，启用fd feature
+
+```toml
+- arceos_posix_api = { path = ".arceos/api/arceos_posix_api"}
++ arceos_posix_api = { path = ".arceos/api/arceos_posix_api", features = ["fd"] }
+```
+
+```rust
+// Starry-On-ArceOS/src/syscall_imp/fs/ctl.rs
+
+use core::ffi::c_int;
+use arceos_posix_api::sys_dup as dup;
+pub(crate) fn sys_dup(old_fd: c_int) -> isize {
+    dup(old_fd) as isize
+}
+```
+
+
+
+### 5.dup3
+
+```rust
+// Starry-On-ArceOS/src/syscall_imp/fs/ctl.rs
+
+use arceos_posix_api::sys_dup2 as dup2;
+pub(crate) fn sys_dup2(old_fd: c_int, new_fd: c_int) -> isize {
+    dup2(old_fd, new_fd) as isize
+}
+```
+
+
+
+### 6.mkdirat
+
+```rust
+use alloc::format;
+use alloc::string::String;
+fn get_path(path: *const u8) -> String {
+    let curr = current();
+    let curr_ext = curr.task_ext();
+    let mut aspace = curr_ext.aspace.lock();
+    
+    let mut path = path as usize;
+    let mut buf: [u8; 128] = [0; 128];
+    let mut idx = 0;
+    let mut c: [u8; 1] = [0];
+    while idx < 128 {
+        aspace.read(VirtAddr::from_ptr_of(path as *const u8), &mut c);
+        if c[0] == 0 {
+            break;
+        } else {
+            buf[idx] = c[0];
+            idx += 1;
+            path += 1;
+        }
+    }
+    
+    let mut res = String::new();
+    unsafe {
+        let tmp = core::str::from_utf8_unchecked(&buf[..idx]);
+        res = format!("{}{}", res, tmp);
+        
+    }
+
+    res
+}
+
+pub(crate) fn sys_chdir(path: *const u8) -> isize {
+    let mut path = get_path(path);
+    axfs::api::set_current_dir(path.as_str());
+    0
+}
+
+pub(crate) fn sys_mkdirat(dirfd: usize, path: *const u8, mode: u32) -> isize {
+    let cwd = axfs::api::current_dir().unwrap(); // "/"
+    let mut path = get_path(path); // "test_chdir"
+    let res = format!("{}{}/", cwd, path); // "/test_chdir/"
+
+    if dirfd == -100isize as usize {
+        if axfs::api::path_exists(path.as_str()) {
+            // 文件已存在
+            warn!("dir is exist");
+            return -1;
+        }
+        let _ = axfs::api::create_dir(res.as_str());
+        // 只要文件夹存在就返回0
+        if axfs::api::path_exists(path.as_str()) {
+            warn!("create dir success");
+            0
+        } else {
+            warn!("create dir fail");
+            -1
+        }
+    } else {
+        -1
+    }
+    
+}
+```
+
+
+
+![image-20241219142937904](./Starry记录.assets/image-20241219142937904.png)
+
+
+
+### 7.close  open  openat read write sleep
+
+```rust
+use arceos_posix_api::sys_open;
+pub(crate) fn sys_openat(_dirfd: c_int, path: *const i8, mode: usize) -> isize {
+    //warn!("");
+    sys_open(path, mode as c_int, 0) as isize
+}
+
+use arceos_posix_api::sys_close;
+pub(crate) fn sys_close_with_fd(fd: usize) -> isize {
+    //warn!("");
+    sys_close(fd as c_int) as isize
+}
+```
+
+![42ad165575a2e0effd989884637ddeb](./Starry记录.assets/42ad165575a2e0effd989884637ddeb.jpg)

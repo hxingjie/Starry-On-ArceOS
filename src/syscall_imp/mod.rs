@@ -63,6 +63,14 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::exit_group => sys_exit_group(tf.arg0() as _),
         Sysno::gettimeofday => sys_gettimeofday(tf.arg0() as _),
         Sysno::getcwd => sys_getcwd(tf.arg0() as _, tf.arg1() as _),
+        Sysno::dup => sys_dup(tf.arg0() as _),
+        Sysno::dup3 => sys_dup2(tf.arg0() as _, tf.arg1() as _),
+        Sysno::chdir => sys_chdir(tf.arg0() as _),
+        Sysno::mkdirat => sys_mkdirat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _),
+        Sysno::openat => sys_openat(tf.arg0() as _, tf.arg1() as _, tf.arg2()),
+        Sysno::close => sys_close_with_fd(tf.arg0()),
+        Sysno::clone => sys_clone(tf.arg0(), tf.arg1(), tf.arg2(), tf.arg3(), tf.arg4()),
+        Sysno::wait4 => sys_wait4(tf.arg0(), tf.arg1()),
         _ => {
             warn!("Unimplemented syscall: {}", syscall_num);
             axtask::exit(LinuxError::ENOSYS as _)
