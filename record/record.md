@@ -66,7 +66,7 @@ fn main() {
 
 
 
-### 2.实现 gettimeofday
+### 2. gettimeofday
 
 ```rust
 // Starry-On-ArceOS/src/syscall_imp/time.rs
@@ -88,11 +88,11 @@ pub(crate) fn sys_gettimeofday(tv: *mut timeval) -> isize {
 }
 ```
 
-![image-20241218205622042](./record.assets/gettimeofday.png)
+![image-20241218205622042](./Starry记录.assets/image-20241218205622042.png)
 
 
 
-### 3.实现 getcwd
+### 3. getcwd
 
 ```rust
 // Starry-On-ArceOS/src/syscall_imp/fs/ctl.rs
@@ -120,9 +120,7 @@ pub(crate) fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
 }
 ```
 
-![image-20241218220430705](./record.assets/getcwd.png)
-
-
+![image-20241218220430705](./Starry记录.assets/image-20241218220430705.png)
 
 
 
@@ -145,7 +143,7 @@ pub(crate) fn sys_dup(old_fd: c_int) -> isize {
 }
 ```
 
-
+![dup](./Starry记录.assets/dup.png)
 
 ### 5.dup3
 
@@ -158,7 +156,7 @@ pub(crate) fn sys_dup2(old_fd: c_int, new_fd: c_int) -> isize {
 }
 ```
 
-
+![dup](./Starry记录.assets/dup2.png)
 
 ### 6.mkdirat
 
@@ -228,8 +226,6 @@ pub(crate) fn sys_mkdirat(dirfd: usize, path: *const u8, mode: u32) -> isize {
 }
 ```
 
-
-
 ![image-20241219142937904](./Starry记录.assets/image-20241219142937904.png)
 
 
@@ -250,4 +246,42 @@ pub(crate) fn sys_close_with_fd(fd: usize) -> isize {
 }
 ```
 
-![42ad165575a2e0effd989884637ddeb](./Starry记录.assets/42ad165575a2e0effd989884637ddeb.jpg)
+![dup](./Starry记录.assets/open.png)
+
+![dup](./Starry记录.assets/close.png)
+
+### 8.clone
+
+```rust
+use axtask::{current, TaskExtRef};
+use memory_addr::VirtAddr;
+pub(crate) fn sys_clone(a0: usize, a1: usize, a2: usize, a3: usize, a4: usize) -> isize {
+    //warn!("{}, {}, {}, {}, {}", a0, a1, a2, a3, a4);
+    let cur = current();
+    unsafe {
+        let tmp = cur.task_ext_ptr() as *mut TaskExt;
+        let tmp = tmp.as_mut().unwrap();
+        let new_task_ref = spawn_user_task(tmp.aspace.clone(), tmp.uctx.clone());
+        tmp.child = new_task_ref.id().as_u64() as usize;
+        warn!("{}, {}, {}", cur.name(), cur.id().as_u64(), tmp.child);
+        
+        new_task_ref.id().as_u64() as isize
+    }
+}
+
+
+pub(crate) fn sys_wait4(pid: usize, watatus: usize) -> isize {
+    sleep(Duration::new(2, 0));
+    // wait_child();
+
+    let curr = current();
+    let curr_ext = curr.task_ext();
+
+    let mut aspace = curr_ext.aspace.lock();
+    let num: i32 = 1;
+    aspace.write(VirtAddr::from_ptr_of(watatus as *const i32), &num.to_be_bytes());
+    
+    curr_ext.child as isize
+}
+```
+

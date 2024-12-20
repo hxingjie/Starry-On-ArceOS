@@ -40,7 +40,7 @@ fn run_test_from_disk(name: &str) {
 
 #[no_mangle]
 fn main() {
-    run_test_from_disk("clone");
+    run_test_from_disk("dup2");
 
     // loader::list_apps();
     // let testcases = option_env!("AX_TESTCASES_LIST")
