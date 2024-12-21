@@ -284,4 +284,67 @@ pub(crate) fn sys_wait4(pid: usize, watatus: usize) -> isize {
     curr_ext.child as isize
 }
 ```
+![clone](./record.assets/clone.png)
 
+### 9.execve
+```rust
+// 直接另起一个进程
+pub(crate) fn sys_execve(path: usize) -> isize {
+    let path = path as *const u8;
+    let name = crate::syscall_imp::get_path(path);
+
+    let (entry_vaddr, ustack_top, uspace) = crate::mm::load_user_app(name.as_str()).unwrap();
+    let user_task = crate::task::spawn_user_task(
+        Arc::new(Mutex::new(uspace)),
+        UspaceContext::new(entry_vaddr.into(), ustack_top, 2333),
+        name.as_str(),
+    );
+
+    let exit_code = user_task.join();
+    exit(0)
+}
+```
+![execve](./record.assets/execve.png)
+
+### 10.fstat
+```rust
+pub(crate) fn sys_fstat(fd: usize, kst: usize) -> isize {
+    unsafe {
+        arceos_posix_api::sys_fstat(fd as i32, kst as *mut arceos_posix_api::ctypes::stat) as isize
+    }
+}
+```
+![fstat](./record.assets/fstat.png)
+
+### 11.uname
+```rust
+pub(crate) fn sys_uname(mut uname: usize) -> isize {
+    let mut tmp: [u8; 65] = [0; 65];
+
+    let names = [
+        b"Starry-On-ArceOS\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"Starry - machine[0]\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"10.0.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"10.0.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"RISC-V 64 on SIFIVE FU740\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"https://github.com/Azure-stars/arceos",
+    ];
+
+    for name in names.iter() {
+        for (i, c) in name.iter().enumerate() {
+            tmp[i] = *c;
+        }
+        tmp[name.len()] = 0;
+    
+        let curr = current();
+        let curr_ext = curr.task_ext();
+        let mut aspace = curr_ext.aspace.lock();
+        
+        aspace.write(VirtAddr::from_ptr_of(uname as *mut u8), &tmp);
+        uname += 65;
+    }
+
+    0
+}
+```
+![uname](./record.assets/uname.png)

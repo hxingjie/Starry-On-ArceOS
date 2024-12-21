@@ -35,11 +35,14 @@ pub(crate) fn sys_clone(a0: usize, a1: usize, a2: usize, a3: usize, a4: usize) -
         cur_ext.uctx.set_ip(cur_ext.uctx.get_ip() + 4);
 
         let mut child_uctx = cur_ext.uctx.clone_ctx();
+        //child_uctx.set_ip(child_uctx.get_ip() + 4);
         child_uctx.set_retval(0);
 
-        let (entry_vaddr, ustack_top, uspace) = load_user_app(cur.name()).unwrap();
-        //let uspace = cur_ext.aspace.clone();
-        let uspace = Arc::new(Mutex::new(uspace));
+        //cur_ext.uctx.set_ip(cur_ext.uctx.get_ip() + 4);
+
+        //let (entry_vaddr, ustack_top, uspace) = load_user_app(cur.name()).unwrap();
+        //let uspace = Arc::new(Mutex::new(uspace));
+        let uspace = cur_ext.aspace.clone();
 
         let name = String::from(cur.name());
         let mut child_task = TaskInner::new(
@@ -65,8 +68,8 @@ pub(crate) fn sys_clone(a0: usize, a1: usize, a2: usize, a3: usize, a4: usize) -
 
 // 简单的放入等待队列，让下一个退出的进程唤醒
 pub(crate) fn sys_wait4(pid: usize, watatus: usize) -> isize {
-    //sleep(Duration::new(2, 0));
-    axtask::wait_child();
+    sleep(Duration::new(2, 0));
+    //axtask::wait_child();
 
     let cur = current();
     warn!("syswait, {}", cur.id().as_u64());
