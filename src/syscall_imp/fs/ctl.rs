@@ -1,8 +1,10 @@
 use core::default;
 use core::ffi::c_void;
 use axfs::api::write;
+use xmas_elf::program::Flags;
 
 use crate::syscall_body;
+use crate::syscall_imp::sys_mmap;
 
 /// The ioctl() system call manipulates the underlying device parameters
 /// of special files.
@@ -54,7 +56,7 @@ pub(crate) fn sys_dup2(old_fd: c_int, new_fd: c_int) -> isize {
 
 use alloc::format;
 use alloc::string::String;
-fn get_path(path: *const u8) -> String {
+pub fn get_path(path: *const u8) -> String {
     let curr = current();
     let curr_ext = curr.task_ext();
     let mut aspace = curr_ext.aspace.lock();
@@ -127,3 +129,48 @@ pub(crate) fn sys_close_with_fd(fd: usize) -> isize {
     //warn!("");
     sys_close(fd as c_int) as isize
 }
+
+// struct utsname {
+//     sysname: [u8; 65],
+// 	char nodename[65],
+// 	char release[65],
+// 	char version[65],
+// 	char machine[65],
+// 	char domainname[65],
+// }
+pub(crate) fn sys_uname(mut uname: usize) -> isize {
+    let mut tmp: [u8; 65] = [0; 65];
+
+    let names = [
+        b"Starry-On-ArceOS\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"Starry - machine[0]\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"10.0.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"10.0.0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"RISC-V 64 on SIFIVE FU740\0\0\0\0\0\0\0\0\0\0\0\0",
+        b"https://github.com/Azure-stars/arceos",
+    ];
+
+    for name in names.iter() {
+        for (i, c) in name.iter().enumerate() {
+            tmp[i] = *c;
+        }
+        tmp[name.len()] = 0;
+    
+        let curr = current();
+        let curr_ext = curr.task_ext();
+        let mut aspace = curr_ext.aspace.lock();
+        
+        aspace.write(VirtAddr::from_ptr_of(uname as *mut u8), &tmp);
+        uname += 65;
+    }
+
+    0
+}
+
+pub(crate) fn sys_fstat(fd: usize, kst: usize) -> isize {
+    unsafe {
+        arceos_posix_api::sys_fstat(fd as i32, kst as *mut arceos_posix_api::ctypes::stat) as isize
+    }
+}
+
+

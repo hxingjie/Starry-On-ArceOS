@@ -34,13 +34,14 @@ fn run_test_from_disk(name: &str) {
     let user_task = task::spawn_user_task(
         Arc::new(Mutex::new(uspace)),
         UspaceContext::new(entry_vaddr.into(), ustack_top, 2333),
+        name,
     );
     let exit_code = user_task.join();
 }
 
 #[no_mangle]
 fn main() {
-    run_test_from_disk("dup2");
+    run_test_from_disk("mmap");
 
     // loader::list_apps();
     // let testcases = option_env!("AX_TESTCASES_LIST")

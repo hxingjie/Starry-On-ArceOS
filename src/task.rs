@@ -48,7 +48,7 @@ impl TaskExt {
 
 axtask::def_task_ext!(TaskExt);
 
-pub fn spawn_user_task(aspace: Arc<Mutex<AddrSpace>>, uctx: UspaceContext) -> AxTaskRef {
+pub fn spawn_user_task(aspace: Arc<Mutex<AddrSpace>>, uctx: UspaceContext, name: &str) -> AxTaskRef {
     let mut task = TaskInner::new(
         || {
             let curr = axtask::current();
@@ -61,7 +61,7 @@ pub fn spawn_user_task(aspace: Arc<Mutex<AddrSpace>>, uctx: UspaceContext) -> Ax
             );
             unsafe { curr.task_ext().uctx.enter_uspace(kstack_top) };
         },
-        "userboot".into(),
+        name.into(),
         crate::config::KERNEL_STACK_SIZE,
     );
     task.ctx_mut()
