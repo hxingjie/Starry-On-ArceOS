@@ -88,7 +88,7 @@ pub(crate) fn sys_gettimeofday(tv: *mut timeval) -> isize {
 }
 ```
 
-![image-20241218205622042](./Starry记录.assets/image-20241218205622042.png)
+![gettimeofday](./record.assets/gettimeofday.png)
 
 
 
@@ -120,7 +120,7 @@ pub(crate) fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
 }
 ```
 
-![image-20241218220430705](./Starry记录.assets/image-20241218220430705.png)
+![getcwd](./record.assets/getcwd.png)
 
 
 
@@ -143,7 +143,7 @@ pub(crate) fn sys_dup(old_fd: c_int) -> isize {
 }
 ```
 
-![dup](./Starry记录.assets/dup.png)
+![dup](./record.assets/dup.png)
 
 ### 5.dup3
 
@@ -156,7 +156,7 @@ pub(crate) fn sys_dup2(old_fd: c_int, new_fd: c_int) -> isize {
 }
 ```
 
-![dup](./Starry记录.assets/dup2.png)
+![dup2](./record.assets/dup2.png)
 
 ### 6.mkdirat
 
@@ -226,11 +226,11 @@ pub(crate) fn sys_mkdirat(dirfd: usize, path: *const u8, mode: u32) -> isize {
 }
 ```
 
-![image-20241219142937904](./Starry记录.assets/image-20241219142937904.png)
+![chdir](./record.assets/chdir.png)
 
 
 
-### 7.close  open  openat read write sleep
+### 7.open close
 
 ```rust
 use arceos_posix_api::sys_open;
@@ -246,9 +246,9 @@ pub(crate) fn sys_close_with_fd(fd: usize) -> isize {
 }
 ```
 
-![dup](./Starry记录.assets/open.png)
+![open](./record.assets/open.png)
 
-![dup](./Starry记录.assets/close.png)
+![close](./record.assets/close.png)
 
 ### 8.clone
 
